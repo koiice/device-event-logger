@@ -1,3 +1,4 @@
+
 import { Hono } from "hono";
 import type { Env, Vars } from "./types.ts";
 import { corsMiddleware } from "./middleware/cors.ts";
@@ -81,7 +82,7 @@ export function createApp(options?: AppOptions) {
     await next();
   });
 
-  // Routes
+  // Events API - protected by API_KEY
   app.route("/events", (() => {
     const group = new Hono<{ Bindings: Env; Variables: Vars }>();
     group.use("*", authMiddleware);
@@ -89,7 +90,13 @@ export function createApp(options?: AppOptions) {
     return group;
   })());
 
-  app.route("/mcp", mcp);
+  // MCP API - now also protected by API_KEY
+  app.route("/mcp", (() => {
+    const group = new Hono<{ Bindings: Env; Variables: Vars }>();
+    group.use("*", authMiddleware);
+    group.route("/", mcp);
+    return group;
+  })());
 
   return app;
 }
